@@ -1,0 +1,1007 @@
+FORMAT: 1A8
+HOST: http://tripiq.null/api
+
+# TripIQ operator API
+
+
+
+# To do
+
+- Specify roles for each endpoint
+
+
+
+# Authentication
+
+General API usage requires that you send your API token along with your request.
+
+*More on where to find an API token, etc.*
+
+An API token can be sent either with headers (via the `Authorization` header), or as the `token` parameter in a request.
+
+The following are all equivalent:
+
+* Setting the header `Authentication: Bearer $key`
+* Setting the header `Authentication: $key`
+* Adding `?token=$key` to the URL
+* Adding `token=$key` to a form POST request
+* Adding the key `"token": "$key"` to a JSON POST
+
+
+
+# Roles
+
+*Some stuff about role-based access here.*
+
+
+
+# Errors
+
+All resources will return errors as JSON in the following formats.
+Error messages may change according to locale or application version, so client logic should rely on the error code returned.
+
+## General errors
+
+Normal API usage will generally result in a common error with a code (which can be relied upon for logic checks), and a message, to aid with debugging.
+
+An example of a general error is below:
+
+    {
+        "error": {
+            "code": 404,
+            "message": "Resource not found"
+        }
+    }
+
+## Validation errors
+
+Validation errors will have an object mapping field names to specific validation errors.
+These error messages should be forwarded on to a user (for example, when creating a resource), and may change.
+
+A validation error example is below:
+
+    {
+        "code": 422,
+        "errors": {
+            "account_type_id": ["The account type id field is required."],
+            "operator_id": ["The selected operator id is invalid."]
+        }
+    }
+
+
+
+# group Accounts
+
+## Account type collections [/v1/account-types]
+
+*Account types* allow operators to organise accounts using descriptive names and apply rules, such as tariffs, to accounts of specific types. For example, an operator may wish to allow their users to register for a 'Personal' account or a 'Business' account in order to charge business and personal customers different prices. Account type resources are solely descriptive; rules can be applied to account types using the rule management endpoints.
+
+### List all account types [GET]
+
+Retrieve a list of all account types made available to users by the operator and the total number of account_types returned. The account_type id can be used to specify what type of account the user wishes to create when submitting a POST request to the accounts endpoint.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        {
+            "response": {
+                "account_types": [
+                    {
+                        "id": 1,
+                        "name": "Personal",
+                        "description": "Personal Account",
+                        "operator_id": null
+                    },
+                    {
+                        ...
+                    }
+                ]
+            },
+            "count": 2
+        }
+
+### Create new account type [POST]
+
+Create new account type resources, specifying a name, description and optional operator ID. Returns the new account_type resource.
+
+*Not fully implemented*
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: api_key
+
++ Attributes
+
+    - name (string, required) - Short name for the account type (e.g. 'Business')
+    - description (string, required) - Longer description of the account type (e.g. 'Accounts for business or non-profit use')
+    - operator_id (number) - The id of the operator within which the account type should be created.
+
++ Response 200
+
+## Individual account types [/v1/account-types/{account_type_id}]
+
++ Parameters
+    + account_type_id (number) - Account type ID as integer
+
+### Retrieve account type [GET]
+
+Returns the specified account_type resource, including ID, name, description and, where specified, operator ID.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response": {
+            "id": 1,
+            "name": "Business",
+            "description": "Business and non-profit customers",
+            "operator_id": null
+            }
+        ]
+
+### Update account type [PUT]
+
+Update the name, description and optional operator ID of an existing account_type resource. Returns the updated resource.
+
+*Not fully implemented*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+### Delete account type [DELETE]
+
+Delete an existing account_type resource. Returns a 204 No Content response.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 204
+
+
+## Account collections [/v1/accounts]
+
+*Accounts* are identifiers for individual billing accounts. The account resource stores information on the account name and description, which operator the account belongs to, and any configuration options enabled or disabled for the account. Accounts are referenced by many other areas of the application; for example, rules and tariffs can be applied to accounts, drivers can be authorised to bill trips to an account, financial transactions reference specific accounts, and users can have access roles associated with multiple accounts.
+
+### List all accounts accessible by current user [GET]
+
+For authenticated users, returns a list of accounts to which that user has access and the total number of accounts returned. For administrators, returns a full list of accounts the administrator is authorised to view and the total number of account types returned.
+
+*Not fully implemented*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+        "response": {
+            "accounts": [
+                {
+                    "id": 1,
+                    "name": "Haag, Ratke and Bernhard",
+                    "description": null,
+                    "franchise_id": null,
+                    "account_type_id": 0,
+                    "promotion_code_id": null,
+                    "default_invite_autojoin": false,
+                    "deleted_at": null,
+                    "created_at": "2015-11-18 10:11:19",
+                    "updated_at": "2015-11-18 10:11:19",
+                    "status_text": "pending",
+                    "custom_responses": []
+                },
+                {
+                    ...
+                }
+            ],
+            "count": 2
+        ]
+
+### Create a new account [POST]
+
+All registered users can create an account. If custom questions are applicable to accounts within the user's operator, the appropriate account_question_{id} properties must be passed as part of the request. There is no practical limit to the number of custom questions that can be asked.
+
+Responses will either return the new resource as JSON, any validation errors, or any internal errors.
+
++ Request (application/json)
+
+    + Headers
+
+            Authorization: api_key
+
++ Attributes
+
+    - name (string, required) - (e.g. 'TripIQ') Max 255 characters.
+    - description (string, required) - (e.g. 'TripIQ employee account')
+    - account_type_id (number, required) - The id of the account_type the user wishes to create. Account types can be retrieved using the account_type endpoint.
+    - franchise_id (number) - The id of the franchise the user wishes to join. (deprecated)
+    - promotion_code (string) - Promotion code provided by the operator for marketing purposes.
+    - default_invite_autojoin (boolean) - If true, drivers invited to the account will automatically join the account once their driver profile has been processed. If false, an account administrator will need to approve the driver as a member of the account once the driver's profile has been processed.
+    - account_question_x (string, required) - (e.g. 'account_question_1': 'yes') The answer to a custom question. Custom questions for a given resource type can be retrieved from the custom-questions endpoint.
+
++ Response 200 (application/json)
+
+        [
+          "response": {
+            "name": "Account name",
+            "franchise_id": null,
+            "updated_at": "2015-11-19 11:40:21",
+            "created_at": "2015-11-19 11:40:21",
+            "id": 10,
+            "status_text": "pending",
+            "custom_responses": {
+              "account_question_1": "answer"
+            }
+          }
+        ]
+
+
+## Account resources [/v1/accounts/{account_id}]
+
++ Parameters
+    + account_id (number) - Account ID as integer
+
+### Retrieve account [GET]
+
+Returns the specified account resource, including an array of responses to any custom questions the user was required to answer in order to join the account.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+              "response": {
+                    "id": 1,
+                    "name": "Haag, Ratke and Bernhard",
+                    "description": null,
+                    "franchise_id": null,
+                    "account_type_id": 0,
+                    "promotion_code_id": null,
+                    "default_invite_autojoin": false,
+                    "deleted_at": null,
+                    "created_at": "2015-11-18 10:11:19",
+                    "updated_at": "2015-11-18 10:11:19",
+                    "status_text": "pending",
+                    "custom_responses": []
+              }
+        ]
+
+### Update account [PUT]
+
+*Not fully implemented*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+### Delete account [DELETE]
+
+Delete an existing account resource. Returns a 204 No Content response.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 204
+
+
+## Account driver collections [/v1/accounts/{account_id}/drivers]
+
+*Account drivers* are drivers permitted to charge bookings to a billing account. A driver needs to be invited to an account by an account administrator and meet any criteria set by the account holder in order to be authorised to charge the account.
+
++ Parameters
+    + account_id (number) - Account ID as integer
+
+### List all account drivers [GET]
+
+Retrieve a list of all drivers with access to the account, including account membership status and any responses to custom questions associated with the account resource.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response":
+                {
+                    "drivers":
+                        {
+                            {
+                                "full_name": "Berta Ondricka",
+                                "dob": "1988-02-09",
+                                "address": "441 Barrows Ways\nLake Luis, PA 00588",
+                                "postcode": "62413-86",
+                                "license_number": "6068049288296",
+                                "license_country_iso": "tl",
+                                "issued": "1995-12-08",
+                                "expires": "2021-05-05",
+                                "smartcard_required": 1,
+                                "deleted_at": null,
+                                "created_at": "2015-11-18 10:11:19",
+                                "updated_at": "2015-11-18 10:11:19",
+                                "status_text": "pending",
+                                "custom_responses": []
+                            }
+                        },
+                        "count": 1
+                }
+        ]
+
+
+## Account invitation collections [/v1/accounts/{account_id}/invitations]
+
+Account invitations allow account administrators to invite users to join their account. A user must have a driver profile in order to join an account. Invitations have an expiry date and one of the following statuses:
+- Rejected (The user has rejected the invitation)
+- Pending (The user has not yet accepted or rejected the invitation)
+- Accepted (The user has accepted the invitation)
+- Approved (Accounts can be configured to require 'approval' of users accepting an invitation, giving the account administrator the opportunity to invite users without a driver profile and subsequently review the driver's profile before approving them as a member of the account.)
+
++ Parameters
+    + account_id (number) - Account ID as integer
+
+### List all account invitations [GET]
+
+Retrieve a list of all invitations associated with the account specified.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response":
+            {
+                "invitations": [
+                {
+                    "id": 1,
+                    "account_id": 1,
+                    "user_id": 1,
+                    "email": "test@tripiq.eu",
+                    "created_at": "2015-11-20 14:40:27",
+                    "status_text": "pending",
+                    "is_expired": false,
+                    "expires_at": "2015-11-27 14:40:27"
+                },
+                {
+                    ...
+                }
+            },
+            count: 2
+        ]
+
+### Create a new account invitation [POST]
+
+*To be completed*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+
+## Account invitation resources [/v1/accounts/{account_id}/invitations/{invitation_id}]
+
++ Parameters
+    + account_id (number) - Account ID as integer
+    + invitation_id (number) - Invitation ID as integer
+
+### Delete account invitation [DELETE]
+
+*To be completed*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+### Update account invitation [PUT]
+
+*To be completed*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+
+## Account user collections [/v1/accounts/{account_id}/users]
+
++ Parameters
+    + account_id (number) - Account ID as integer
+
+### List all account users [GET]
+
+Returns an array of user objects associated with an account, including the user's role within that account, either *member* or *owner*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response":
+                [
+                    {
+                          "user_id": 4,
+                          "user_name": "Ora Jast",
+                          "role": "owner"
+                    },
+                    {
+                          "user_id": 10,
+                          "user_name": "Damien Hunter",
+                          "role": "member"
+                    },
+                ]
+        ]
+
+
+
+# group Transactions
+
+Transactions give a full history of all of the transactions against a specific account, detailing tax, types and total amounts.
+
+Transaction values are all in the lowest denomination of an accounts' currency. Examples are below (default: *gbp*).
+
+currency | name                   | base  | value for "10000"
+:-------:|:----------------------:|:-----:|:-----------------
+gbp      | British Pound Sterling | pence | £100.00
+usd      | United States Dollars  | cents | $100.00
+jpy      | Japanese Yen           | yen   | ¥10000
+nok      | Norwegian Krone        | øre   | 100kr
+
+## Transaction Types
+
+Transactions are typed, meaning that, depending on the `"type"` value, a transaction could have different behaviors.
+
+type           | name                  | behavior | taxable
+---------------|-----------------------|----------|--------
+cash.payment   | Cash Payment          | credit   | yes
+stripe.payment | Stripe (Card) Payment | credit   | yes
+goodwill       | Arbitrary Credits     | credit   | yes
+fine           | Arbitrary Debits      | debit    | yes
+refund         | Refund                | credit   | yes
+trip.charge    | Trip Fees             | debit    | yes
+
+
+## Viewing Transactions [/v1/account/{account_id}/transactions]
+
+### List all transactions on an account [GET]
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
++ Parameters
+    + account_id (number) - ID of the account
+
++ Response 200 (application/json)
+
+        {
+            "response": {
+                "transactions": [
+                    {
+                        "id": 2,
+                        "account_id": 1,
+                        "amount": 10000,
+                        "tax": 1000,
+                        "created_at": "2015-01-01 00:00:00",
+                        "type": "payment.type",
+                        "deduction": false,
+                        "taxable": true,
+                        "total_value": 11000
+                    },
+                    {
+                        "id": 2,
+                        "account_id": 1,
+                        "amount": 10000,
+                        "tax": 1000,
+                        "created_at": "2015-01-01 00:00:00",
+                        "type": "payment.type",
+                        "deduction": false,
+                        "taxable": true,
+                        "total_value": 11000
+                    },
+                ],
+                "count": 2
+            }
+        }
+
+### Get a specific transaction on an account [GET /v1/account/{account_id}/transactions/{transaction_id}]
+
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        {
+          "response": {
+            "id": 2,
+            "account_id": 1,
+            "amount": 10000,
+            "tax": 1000,
+            "created_at": "2015-01-01 00:00:00",
+            "type": "payment.type",
+            "deduction": false,
+            "taxable": true,
+            "total_value": 11000
+          }
+        }
+
+### Make a transaction against an account [POST]
+
+Operators can make arbitrary transactions against accounts they control.
+The allowed transaction types are:
+
+type           | description
+---------------|------------
+`goodwill`     | Arbitrary credits to an account for any reason.
+`cash.payment` | Used to represent a user topping up their account balance by paying their operator in cash.
+`fine`         | Arbitrary debits to an account, e.g. £10 fines for smoking in cars.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
++ Parameters
+    + account_id (number) - The account which the transaction is for.
+
++ Attributes
+
+    - type (string, required) - Type of the transaction (e.g. cash.payment, fine, goodwill).
+    - amount (number, required) - An integer representing how much the transaction is worth, minus tax.
+    - tax (number, required) - An integer representing how much tax is added to this transaction.
+
++ Response 201 (application/json)
+
+    + Attributes
+        - response (object, required) - The response object
+            - id (number)
+            - account_id (number)
+            - amount (number)
+            - tax (number) - A positive integer denoting how much tax is on a transaction
+            - type (string) - The transactions type
+            - deduction (boolean)
+            - taxable (boolean)
+            - total_value (number)
+            - created_at (string) - Timestamp
+
+## Refunds [/v1/accounts/{account_id}/transactions/{transaction_id}/refund]
+
+*Not yet implemented*
+
+You may want to refund a transaction on an account, in which case you can either refund the entire amount or refund a partial amount.
+
+### Refunding a transaction [POST]
+
+When a transaction is refunded, the account in question will be credited for the refunded amount.
+Refunds to a card should be processed manually.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
++ Parameters
+    + account_id (number) - The account which the transaction is for.
+    + transaction_id (number) - The transaction ID to refund.
+
++ Attributes
+
+    - amount (number, required) - An integer confirming the amount to refund (cannot be larger than the value of the transaction)
+
++ Response 201 (application/json)
+
+        {
+            "response": {
+                "id": 2,
+                "account_id": 1,
+                "amount": 10000,
+                "tax": 1000,
+                "created_at": "2015-01-01 00:00:00",
+                "type": "refund",
+                "deduction": false,
+                "taxable": true,
+                "total_value": 11000
+            }
+        }
+
+
+
+# group Custom fields
+
+## Custom question collections [/v1/custom-questions]
+
+Custom questions allow operators and account administrators to collect information from users. Questions are targeted at a specific resource types, such as drivers or accounts, and can also be targeted at specific resources or operators. For example, an operator may want to ask all drivers insurance questions before approving their driver profile, or a specific account holder may wish all drivers to answer specific questions before they are allowed to join an account.
+
+### List all custom questions [GET]
+
+Retrieve a list of all custom questions.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        {
+            "response":
+                {
+                    "custom-questions":
+                        [
+                            {
+                                "id": 1,
+                                "slug": "dvla_sharing_code",
+                                "display": "DVLA Sharing Code",
+                                "description": "A DVLA Sharing Code obtained from DVLA website",
+                                "type": "text",
+                                "extra": null,
+                                "required": true,
+                                "order": 0,
+                                "enforced": false,
+                                "operator_id": null,
+                                "resource_id": null,
+                                "created_by": 0,
+                                "created_at": "-0001-11-30 00:00:00",
+                                "updated_at": "-0001-11-30 00:00:00",
+                                "resource": "driver"
+                            },
+                            {
+                                ...
+                            }
+                        ]
+                },
+                "count": 2
+        }
+
+### Create a new custom question [POST]
+
+Create a new custom question.
+
+*To be completed*
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Attributes
+
+    - slug (string, required) - Short name (e.g. driving-offences)
+    - display (string, required)  - Question (e.g. Have you ever been disqualified from driving?)
+    - description (string)
+    - type (string, required) - HTML element type (text, textarea, select, or bool)
+    - operator_id (number) - ID of the operator within which this question will be applied
+    - resource (string, required) - Type of resource that this question applies to (driver, account or driver_application)
+    - resource_id (number) - Specific resource to which this question should be applied
+    - extra (array)
+    - required (boolean) - If true, specified resource can not be updated if there is no answer associated with this question
+    - order (number)
+
++ Response 200
+
+
+## Custom question resources [/v1/custom-questions/{question_id}]
+
++ Parameters
+    + question_id (number) - Question ID as integer
+
+### Retrieve custom question [GET]
+
+Retrieve an existing custom_question resource by ID.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+
+          "response": {
+            "id": 1,
+            "slug": "dvla_sharing_code",
+            "display": "DVLA Sharing Code",
+            "description": "A DVLA Sharing Code obtained from DVLA website",
+            "type": "text",
+            "extra": null,
+            "required": true,
+            "order": 0,
+            "enforced": false,
+            "operator_id": null,
+            "resource_id": null,
+            "created_by": 0,
+            "created_at": "-0001-11-30 00:00:00",
+            "updated_at": "-0001-11-30 00:00:00",
+            "resource": "driver"
+          }
+
+        ]
+
+### Update custom question [PUT]
+
+Update an existing custom question by ID.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Attributes
+
+    - slug (string, required) - Short name (e.g. driving-offences)
+    - display (string, required)  - Question (e.g. Have you ever been disqualified from driving?)
+    - description (string)
+    - type (string, required) - HTML element type (text, textarea, select, or bool)
+    - operator_id (number) - ID of the operator within which this question will be applied
+    - resource (string, required) - Type of resource that this question applies to (driver, account or driver_application)
+    - resource_id (number) - Specific resource to which this question should be applied
+    - extra (array)
+    - required (boolean) - If true, specified resource can not be updated if there is no answer associated with this question
+    - order (number)
+
++ Response 204
+
+### Delete custom question [DELETE]
+
+Delete an existing custom question.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200
+
+
+
+# group Operators
+
+## Operator collections [/v1/operators]
+
+### List all operators [GET]
+
+*To be completed - 200, but no content*
+
++ Response 200
+
+### Create a new operator [POST]
+
+*To be completed*
+
++ Response 200
+
+
+## Operator resources [/v1/operators/{operator_id}]
+
++ Parameters
+    + operator_id (number) - Operator ID as integer
+
+### Retrieve an operator [GET]
+
+*To be completed*
+
++ Response 200
+
+### Update an operator [PUT]
+
+*To be completed*
+
++ Response 304
+
+
+
+# group Promotional Codes
+
+## Promotional code collections [/v1/promotional-codes]
+
+### List all promotional codes [GET]
+
+*To be completed*
+
++ Response 200
+
+### Create a new promotional code [POST]
+
+*To be completed*
+
++ Response 200
+
+
+## Promotional code resources [/v1/promotional-codes/{promotional_code_id}]
+
++ Parameters
+    + promotional_code_id (number) - Promotional code ID as integer
+
+### Retrieve a promotional code [GET]
+
+*To be completed*
+
++ Response 200
+
+### Update a promotional code [PUT]
+
+*To be completed*
+
++ Response 304
+
+### Delete a promotional code [DELETE]
+
+*To be completed*
+
++ Response 204
+
+
+
+# group Smart Cards
+
+## Smart card collections [/v1/smart-cards]
+
+### List all smart cards [GET]
+
+*To be completed*
+
++ Response 200
+
+### Create a new smart card [POST]
+
+*To be completed*
+
++ Response 200
+
+## Smart card resources [/v1/smart-cards/{smart_card_id}]
+
++ Parameters
+    + smart_card_id (number) - Smart card ID as integer
+
+### Retrieve a smart card [GET]
+
+*To be completed*
+
++ Response 200
+
+### Update a smart card [PUT]
+
+*To be completed*
+
++ Response 304
+
+### Delete a smart card [DELETE]
+
+*To be completed*
+
++ Response 204
+
+
+
+# group Users
+
+*Needs updating*
+
+## User collections [/v1/users]
+
+### List all users [GET]
+
+View all users the current administrator visible to current user. Only available to operator network administrators.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response": {
+                "users": [
+                    {
+                        "id": 1,
+                        "name": "TripIQ",
+                        "email": "test@tripiq.eu",
+                        "phone_country_code": null,
+                        "phone_number": null,
+                        "signup_operator_id": null,
+                        "deleted_at": null,
+                        "created_at": "2015-11-26 15:06:21",
+                        "updated_at": "2015-11-26 15:06:21"
+                    },
+                    {
+                        ...
+                    },
+                ],
+                count: 2
+        ]
+
+
+## User resources [/v1/users/:id]
+
+### Request specific user [GET]
+
+View full details about the specified user if visible to current user. Only available to operator network admnistrators.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+        [
+            "response":
+                {
+                    "id": 1,
+                    "name": "TripIQ",
+                    "email": "test@tripiq.eu",
+                    "phone_country_code": null,
+                    "phone_number": null,
+                    "signup_operator_id": null,
+                    "deleted_at": null,
+                    "created_at": "2015-11-26 15:06:21",
+                    "updated_at": "2015-11-26 15:06:21"
+                }
+        ]
