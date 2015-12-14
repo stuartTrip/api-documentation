@@ -504,14 +504,18 @@ nok      | Norwegian Krone        | øre   | 100kr
 
 Transactions are typed, meaning that, depending on the `"type"` value, a transaction could have different behaviors.
 
-type           | name                  | behavior | taxable
----------------|-----------------------|----------|--------
-cash.payment   | Cash Payment          | credit   | yes
-stripe.payment | Stripe (Card) Payment | credit   | yes
-goodwill       | Arbitrary Credits     | credit   | yes
-fine           | Arbitrary Debits      | debit    | yes
-refund         | Refund                | credit   | yes
-trip.charge    | Trip Fees             | debit    | yes
+Transactions that bring an account balance below 0 will result in a charge for the account using the default payment method.
+
+type                 | name                       | behavior 
+---------------------|----------------------------|----------
+`fine`               | Arbitrary Fines            | debit
+`refund`             | Refund                     | credit
+`offline.credit`     | Offline Payment (e.g. Cash)| credit
+`stripe.credit`      | Stripe (Card) Payment      | credit
+`goodwill.credit`    | Arbitrary Credits          | credit
+`trip.charge`        | Trip Fees                  | debit
+`application.charge` | Application Fee            | debit
+
 
 
 ## Viewing Transactions [/v1/account/{account_id}/transactions]
