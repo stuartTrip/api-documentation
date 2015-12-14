@@ -652,19 +652,8 @@ Refunds to a card should be processed manually.
 
 + Response 201 (application/json)
 
-        {
-            "response": {
-                "id": 2,
-                "account_id": 1,
-                "amount": 10000,
-                "tax": 1000,
-                "created_at": "2015-01-01 00:00:00",
-                "type": "refund",
-                "deduction": false,
-                "taxable": true,
-                "total_value": 11000
-            }
-        }
+    + Attributes
+        - response (Transaction)
 
 
 
@@ -761,27 +750,7 @@ Retrieve an existing custom_question resource by ID.
 
 + Response 200 (application/json)
 
-        [
-
-          "response": {
-            "id": 1,
-            "slug": "dvla_sharing_code",
-            "display": "DVLA Sharing Code",
-            "description": "A DVLA Sharing Code obtained from DVLA website",
-            "type": "text",
-            "extra": null,
-            "required": true,
-            "order": 0,
-            "enforced": false,
-            "operator_id": null,
-            "resource_id": null,
-            "created_by": 0,
-            "created_at": "-0001-11-30 00:00:00",
-            "updated_at": "-0001-11-30 00:00:00",
-            "resource": "driver"
-          }
-
-        ]
+    + Attributes (Custom Question)
 
 ### Update custom question [PUT]
 
@@ -959,27 +928,9 @@ View all users the current administrator visible to current user. Only available
 
 + Response 200 (application/json)
 
-        [
-            "response": {
-                "users": [
-                    {
-                        "id": 1,
-                        "name": "TripIQ",
-                        "email": "test@tripiq.eu",
-                        "phone_country_code": null,
-                        "phone_number": null,
-                        "signup_operator_id": null,
-                        "deleted_at": null,
-                        "created_at": "2015-11-26 15:06:21",
-                        "updated_at": "2015-11-26 15:06:21"
-                    },
-                    {
-                        ...
-                    },
-                ],
-                count: 2
-        ]
-
+    + Attributes
+        - users (array[User], required)
+        - count (number, required) - The number of records returned
 
 ## User resources [/v1/users/:id]
 
@@ -995,17 +946,92 @@ View full details about the specified user if visible to current user. Only avai
 
 + Response 200 (application/json)
 
-        [
-            "response":
-                {
-                    "id": 1,
-                    "name": "TripIQ",
-                    "email": "test@tripiq.eu",
-                    "phone_country_code": null,
-                    "phone_number": null,
-                    "signup_operator_id": null,
-                    "deleted_at": null,
-                    "created_at": "2015-11-26 15:06:21",
-                    "updated_at": "2015-11-26 15:06:21"
-                }
-        ]
+        + Attributes
+
+            - response (User)
+
+# Data Structures
+
+# id (number)
+An integer ID
+
+# uuid (string)
+A Universally Unique Identifier, version 1 (time-based).
+
+# email (string)
+An email address
+
+# timestamp (string)
+An ISO8601 timestamp with timezone
+
+# Driver (object)
+
+# User (object)
++ id: `00000000-0000-0000-000000000000` (uuid, required) - The ID of this entity
++ signup_operator_id: `70feb51e-a283-11e5-8cbf-c59b4c9085ef` (uuid, optional) - The ID of the operator this user signed up through, if any.
++ name: `Tester McTesterton` (string, required) - The full name of the user, entered at signup.
++ email: `me@example.com` (email, required) - The user's email.
++ phone_country_code: `44` (string, required) - The country code of the user's phone number.
++ phone_number: `+44(0)730847338` (string, required) - Free-form phone number. At current, this is not converted into an RFC format (+44.0000000)
++ created_at: `2015-12-14T16:55:17Z` (timestamp, required) - The time when the user was created
++ updated_at: `2015-12-14T16:55:17Z` (timestamp, required) - The time when the user was last updated
++ driver (Driver, optional)
+
+# Account (object)
++ id: `00000000-0000-0000-000000000000` (uuid, required) - The ID of this entity
++ operator_id: `00000000-0000-0000-000000000000` (uuid, required) - The operator that this account is under. See /v1/operators.
++ account_type_id: `00000000-0000-0000-000000000000` (uuid, optional) - The type of the account. See /v1/account-types.
++ promotion_code_id: `00000000-0000-0000-000000000000` (uuid, optional) - The ID of the promotional code in use by this account. Accounts can only have one code active.
++ name: `Jane Doe` (string, required) - The name of the account, e.g. "City of Newcastle Council"
++ description: `Lorem Ipsum` (string, optional) - Optional description of the account.
++ balance: `2500` (number, required) - The balance of this account, as a positive or negative integer. 1000 = 10.00 in £ or $, etc.
++ currency: `gbp` (string, required) - The currency that this account operates in.
++ default_invite_autojoin: `true` (boolean, required) - If the users invited to this account will be automatically added or not.
++ status_text: `pending` (enum[string], required)
+  - pending - This account is awaiting approval by an operator
+  - approved - This account has been approved by an operator
+  - suspended - This account has been suspended, either manually or for non-payment.
++ custom_responses (array[Custom Answer])
++ created_at: `2015-01-01T12:00:00Z` (timestamp, required) - When this account was created
++ updated_at: `2015-01-01T12:00:00Z` (timestamp, required) - When this account was last updated
+
+# Transaction (object)
++ id: `00000000-0000-0000-000000000000` (uuid, required) - The ID of this transaction
++ type: `trip.charge` (enum[string], required)
+  - trip.charge
+  - offline.credit
+  - fine
+  - refund
+  - goodwill.credit
+  - stripe.credit
+  - application.charge
++ amount: `4500` (number, required)
++ tax: `500` (number, required)
++ total_value: `-5000` (number, required)
++ created_at: `2015-01-01T12:00:00Z` (timestamp, required) - When this transaction was created
+
+# Custom Answer (object)
+
+# Custom Question
++ id: `00000000-0000-0000-000000000000` (uuid, required) - The ID of this question
++ operator_id: `00000000-0000-0000-000000000000` (uuid, optional) - If present, the operator that this custom question is unique to.
++ slug: `dvla_sharing_code` (string, required)
++ display: `DVLA Sharing Code` (string, required)
++ description: `A DVLA Sharing Code obtained from DVLA website` (string, required)
++ type: `text` (enum[string], required)
+  - text
+  - textarea
+  - bool
+  - boolean
+  - numeric
+  - date
+  - regex
++ extra (object, optional)
++ required: `true` (boolean, required)
++ order: `0`: (number, required) - The order the question appears in (lowest first)
++ enforced: `false` (boolean, required)
++ created_by: `00000000-0000-0000-000000000000` (uuid, optional) - The ID of the user who created this question (usually an admin or null)
++ created_at: `2015-01-01T12:00:00Z` (timestamp, required) - When this question was created
++ updated_at: `2015-01-01T12:00:00Z` (timestamp, required) - When this question was last updated
++ resource: `driver` (string, optional) - The type of resource this question is linked to.
++ resource_id: `00000000-0000-0000-000000000000` (uuid, optional) - The ID of the resource this is linked to.
