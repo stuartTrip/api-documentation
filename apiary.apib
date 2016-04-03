@@ -958,10 +958,29 @@ View full details about the specified user if visible to current user. Only avai
 
             - response (User)
 
-# Data Structures
 
-# id (number)
-An integer ID
+# group Drivers
+
+## Driver resources [/v1/users/{user_id}/driver]
+
+### Request specific user's driver [GET]
+
+View full details about the specified user's driver profile. Users will only be able to view their own driver profile.
+Network administrators will be able to see most details of any other user.
+
++ Request
+
+    + Headers
+
+            Authorization: api_key
+
++ Response 200 (application/json)
+
+    + Attributes
+
+        - response (Driver)
+
+# Data Structures
 
 # uuid (string)
 A Universally Unique Identifier, version 1 (time-based).
@@ -972,7 +991,29 @@ An email address
 # timestamp (string)
 An ISO8601 timestamp with timezone
 
+# date (string)
+A date in YYYY-MM-DD format
+
 # Driver (object)
++ user_id: `00000000-0000-0000-000000000000` (uuid, required) - The User ID this Driver belongs to
++ full_name: `Joe Bloggs` (string, required) - The given name on the user's driving license
++ dob: `1970-01-01` (date, required) - Date-of-birth in YYYY-MM-DD format
++ address: `123 The Street, Area, Town, County` (string, required) - Street address as on the user's driving license
++ postcode: `AB1 2CD` (string, required) - Postcode of above address
++ license_number: `ABCDE701019ABC00` (string, required) - License code or number as depicted on the user's driving license
++ license_country_iso: `gb` (string, required) - Two-char ISO of issuing country
++ issued: `2000-01-31` (date, required) - Date of issue in YYYY-MM-DD format
++ expires: `2000-01-30` (date, required) - Date of expiry in YYYY-MM-DD format
++ smartcard_required: `true` (boolean, required) - Whether a new smart card is requested by the user on initial signup
++ status_reason: `Address incorrect` (string, fixed) - If `status_text` is anything other than `verified`, `status_reason` will explain why
++ created_at: `2015-12-14T16:55:17Z` (timestamp, required) - The time when the driver was created
++ updated_at: `2015-12-14T16:55:17Z` (timestamp, required) - The time when the driver was last updated
++ status_text: `pending` (enum[string], required)
+  - pending - This driver is awaiting approval by an operator
+  - verified - This driver has been approved by an operator
+  - suspended - This driver has been suspended
+  - rejected - This driver application has been rejected
++ custom_responses (array[Custom Answer])
 
 # User (object)
 + id: `00000000-0000-0000-000000000000` (uuid, required) - The ID of this entity
