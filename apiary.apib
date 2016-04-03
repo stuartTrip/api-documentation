@@ -13,8 +13,6 @@ HOST: https://staging.tripiq.io/api
 
 General API usage requires that you send your API token along with your request.
 
-*More on where to find an API token, etc.*
-
 An API token can be sent either with headers (via the `Authorization` header), or as the `token` parameter in a request.
 
 The following are all equivalent:
@@ -29,7 +27,8 @@ The following are all equivalent:
 
 # Roles
 
-*Some stuff about role-based access here.*
+Unless otherwise stated, all endpoints should be accessible to normal users. Additional functionality, filters
+or output may be enabled depending on roles or permissions for a given network.
 
 
 
@@ -66,6 +65,17 @@ A validation error example is below:
         }
     }
 
+## Specific errors
+
+Occasionally some requests may return more specific errors, for example when attempting to make
+a booking and there are conflicts with the assets requested:
+
+    {
+        "error": {
+            "code": 412,
+            "message": "There are conflicts with other assets"
+        }
+    }
 
 
 # group Accounts
@@ -504,7 +514,7 @@ Transactions are typed, meaning that, depending on the `"type"` value, a transac
 
 Transactions that bring an account balance below 0 will result in a charge for the account using the default payment method.
 
-type                 | name                       | behavior 
+type                 | name                       | behavior
 ---------------------|----------------------------|----------
 `fine`               | Arbitrary Fines            | debit
 `refund`             | Refund                     | credit
@@ -934,7 +944,7 @@ View all users the current administrator visible to current user. Only available
 
 ### Request specific user [GET]
 
-View full details about the specified user if visible to current user. Only available to operator network admnistrators.
+View full details about the specified user if visible to current user. Only available to operator network administrators.
 
 + Request
 
