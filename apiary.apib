@@ -96,22 +96,26 @@ Retrieve a list of all account types made available to users by the operator and
 
 + Response 200 (application/json)
 
-        {
-            "response": {
-                "account_types": [
-                    {
-                        "id": 1,
-                        "name": "Personal",
-                        "description": "Personal Account",
-                        "operator_id": null
-                    },
-                    {
-                        ...
-                    }
-                ]
+    {
+        "account_types": [
+            {
+                "id": "00000000-0000-0000-0000-000000000000",
+                "operator_id": "00000000-0000-0000-0000-000000000000",
+                "name": "Business",
+                "description": "Business Account",
+                "membership_charge": true,
+                "created_at": null,
+                "updated_at": null
             },
-            "count": 2
-        }
+            {
+                ...
+            }
+        ],
+        "count": 2
+    }
+
+
+
 
 ### Create new account type [POST]
 
@@ -150,14 +154,15 @@ Returns the specified account_type resource, including ID, name, description and
 
 + Response 200 (application/json)
 
-        [
-            "response": {
-            "id": 1,
-            "name": "Business",
-            "description": "Business and non-profit customers",
-            "operator_id": null
-            }
-        ]
+    {
+        "id": "00000000-0000-0000-0000-000000000000",
+        "operator_id": "00000000-0000-0000-0000-000000000000",
+        "name": "Business",
+        "description": "Business Account",
+        "membership_charge": true,
+        "created_at": null,
+        "updated_at": null
+    }
 
 ### Update account type [PUT]
 
